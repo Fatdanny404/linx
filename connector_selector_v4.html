@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connector Selector</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --bg:#0e0e0e;--surface:#161616;--surface2:#1e1e1e;--surface3:#222;
+    --border:#2a2a2a;--border-bright:#3d3d3d;
+    --accent:#00e5a0;--accent-dim:#00a370;--accent-glow:rgba(0,229,160,0.10);
+    --text:#f0f0ee;--text-muted:#7a7a76;--text-dim:#4a4a47;
+    --danger:#ff4f4f;--warn:#f5a623;--info:#4fa3ff;--purple:#b48aff;
+    --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--radius:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+
+  header{width:100%;max-width:920px;padding:2.5rem 1.5rem 0;display:flex;align-items:flex-end;gap:14px;}
+  .logo-mark{width:38px;height:38px;border:1.5px solid var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .header-text h1{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:-0.5px;line-height:1;}
+  .header-text p{font-size:12px;color:var(--text-muted);margin-top:3px;font-weight:300;}
+
+  main{width:100%;max-width:920px;padding:2rem 1.5rem 3rem;display:flex;flex-direction:column;gap:16px;}
+
+  /* Category + domain */
+  .cat-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .cat-label{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;margin-right:2px;flex-shrink:0;}
+  .cat-group{display:flex;flex-wrap:wrap;gap:6px;}
+  .cat-divider{width:0.5px;background:var(--border);align-self:stretch;margin:0 4px;}
+
+  .domain-btn{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;color:var(--text-muted);padding:5px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  .domain-btn:hover{color:var(--text);border-color:var(--border-bright);}
+  .domain-btn.active{background:var(--accent-glow);border-color:var(--accent-dim);color:var(--accent);}
+  .domain-btn .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+  /* dot colors */
+  .d-any .dot{background:var(--text-dim);}
+  .d-av .dot{background:#4fa3ff;}
+  .d-mil .dot{background:#f5a623;}
+  .d-net .dot{background:#00e5a0;}
+  .d-power .dot{background:#b48aff;}
+  .d-auto .dot{background:#ff6b6b;}
+  .d-plumb .dot{background:#38bdf8;}
+  .d-hvac .dot{background:#818cf8;}
+  .d-gas .dot{background:#fb923c;}
+  .d-hydro .dot{background:#f472b6;}
+  .d-pneum .dot{background:#a3e635;}
+  .d-medgas .dot{background:#e879f9;}
+  .d-sanit .dot{background:#34d399;}
+  .d-fire .dot{background:#f87171;}
+  .d-fuel .dot{background:#fbbf24;}
+  .d-cgas .dot{background:#94a3b8;}
+
+  /* Mode tabs */
+  .mode-tabs{display:flex;gap:6px;}
+  .tab-btn{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;color:var(--text-muted);padding:7px 16px;font-family:var(--mono);font-size:12px;cursor:pointer;transition:all 0.15s;}
+  .tab-btn:hover{color:var(--text);border-color:var(--border-bright);}
+  .tab-btn.active{background:var(--accent-glow);border-color:var(--accent-dim);color:var(--accent);}
+
+  /* Drop zones */
+  .drop-row{display:grid;gap:14px;}
+  .drop-row.single{grid-template-columns:1fr;}
+  .drop-row.dual{grid-template-columns:1fr 1fr;}
+  .drop-zone{border:1.5px dashed var(--border-bright);border-radius:var(--radius);background:var(--surface);cursor:pointer;transition:border-color 0.15s,background 0.15s;overflow:hidden;position:relative;}
+  .drop-zone:hover,.drop-zone.dragover{border-color:var(--accent-dim);background:#161f1b;}
+  .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;}
+  .drop-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1.5rem;gap:8px;pointer-events:none;}
+  .drop-icon{width:42px;height:42px;border:1.5px solid var(--border-bright);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
+  .drop-label{font-size:13px;font-weight:500;}
+  .drop-sub{font-size:11px;color:var(--text-muted);}
+  .slot-tag{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.8px;text-transform:uppercase;}
+  .preview-wrap{position:relative;}
+  .preview-wrap img{width:100%;max-height:260px;object-fit:contain;display:block;border-radius:calc(var(--radius)-1px);background:#0a0a0a;}
+  .preview-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.75);border:0.5px solid var(--border-bright);border-radius:4px;padding:3px 7px;font-family:var(--mono);font-size:11px;color:var(--text-muted);cursor:pointer;z-index:3;}
+  .preview-badge:hover{color:var(--text);}
+
+  .context-bar{display:flex;gap:10px;align-items:flex-end;}
+  .context-bar textarea{flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:14px;padding:10px 14px;resize:none;outline:none;transition:border-color 0.15s;line-height:1.5;height:60px;}
+  .context-bar textarea::placeholder{color:var(--text-dim);}
+  .context-bar textarea:focus{border-color:var(--border-bright);}
+  .btn-analyze{background:var(--accent);color:#000;border:none;border-radius:var(--radius);padding:0 22px;height:60px;font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;transition:opacity 0.15s,transform 0.1s;white-space:nowrap;flex-shrink:0;}
+  .btn-analyze:hover{opacity:0.88;}
+  .btn-analyze:active{transform:scale(0.97);}
+  .btn-analyze:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .status-bar{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--text-muted);min-height:20px;}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
+  .status-dot.active{background:var(--accent);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  /* Safety banners — tiered */
+  .safety-banner{border-radius:6px;padding:12px 16px;display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;}
+  .safety-banner.critical{background:rgba(255,79,79,0.07);border:1px solid rgba(255,79,79,0.4);}
+  .safety-banner.warning{background:rgba(245,166,35,0.07);border:0.5px solid rgba(245,166,35,0.3);}
+  .safety-banner.info{background:rgba(79,163,255,0.06);border:0.5px solid rgba(79,163,255,0.2);}
+  .safety-icon{font-family:var(--mono);font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+  .safety-banner.critical .safety-icon{color:var(--danger);}
+  .safety-banner.warning .safety-icon{color:var(--warn);}
+  .safety-banner.info .safety-icon{color:var(--info);}
+  .safety-content{}
+  .safety-title{font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:4px;}
+  .safety-banner.critical .safety-title{color:var(--danger);}
+  .safety-banner.warning .safety-title{color:var(--warn);}
+  .safety-banner.info .safety-title{color:var(--info);}
+  .safety-text{font-size:12px;color:var(--text-muted);line-height:1.6;}
+
+  /* Material compatibility table */
+  .compat-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+  .compat-table th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);padding:6px 10px;text-align:left;border-bottom:0.5px solid var(--border);}
+  .compat-table td{padding:6px 10px;border-bottom:0.5px solid var(--border);color:var(--text);}
+  .compat-table tr:last-child td{border-bottom:none;}
+  .compat-ok{color:#00c48a;}
+  .compat-no{color:#ff6b6b;}
+  .compat-warn{color:var(--warn);}
+
+  /* Result card */
+  .result-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;display:none;}
+  .result-card.visible{display:block;}
+  .result-header{background:var(--surface2);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .result-header-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .connector-name{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;}
+  .confidence-pill{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:100px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;}
+  .conf-high{background:rgba(0,229,160,0.12);color:var(--accent);}
+  .conf-med{background:rgba(245,166,35,0.12);color:var(--warn);}
+  .conf-low{background:rgba(255,79,79,0.12);color:var(--danger);}
+  .domain-pill{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:100px;font-weight:400;letter-spacing:0.4px;border:0.5px solid var(--border);background:var(--surface3);color:var(--text-muted);}
+
+  .result-header-actions{display:flex;gap:8px;}
+  .btn-action{background:transparent;border:0.5px solid var(--border-bright);border-radius:6px;color:var(--text-muted);padding:5px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all 0.15s;}
+  .btn-action:hover{color:var(--text);border-color:var(--accent-dim);}
+  .btn-action.accent{border-color:var(--accent-dim);color:var(--accent);}
+
+  .result-body{padding:18px;}
+  .spec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:18px;}
+  .spec-cell{background:var(--surface2);border:0.5px solid var(--border);border-radius:6px;padding:10px 12px;}
+  .spec-cell.highlight{border-color:var(--accent-dim);background:var(--accent-glow);}
+  .spec-label{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+  .spec-cell.highlight .spec-label{color:var(--accent-dim);}
+  .spec-value{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;}
+  .spec-cell.highlight .spec-value{color:var(--accent);}
+
+  .section-head{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:8px;}
+
+  /* Signal/flow path */
+  .flow-path{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .flow-node{background:var(--surface2);border:0.5px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;color:var(--text);}
+  .flow-node.mid{border-color:var(--accent-dim);color:var(--accent);background:var(--accent-glow);}
+  .flow-arrow{color:var(--text-dim);font-family:var(--mono);font-size:12px;}
+
+  /* Compliance */
+  .compliance-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .cbadge{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:4px;border:0.5px solid var(--border);color:var(--text-muted);background:var(--surface2);}
+  .cbadge.met{border-color:rgba(0,229,160,0.3);color:#00c48a;background:rgba(0,229,160,0.05);}
+  .cbadge.warn{border-color:rgba(245,166,35,0.3);color:var(--warn);background:rgba(245,166,35,0.05);}
+
+  .verdict-section{border-top:0.5px solid var(--border);padding-top:16px;margin-top:4px;}
+  .verdict-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:8px;}
+  .verdict-text{font-size:14px;color:var(--text);line-height:1.7;font-weight:300;}
+  .verdict-text strong{font-weight:500;}
+
+  .compat-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+  .tag{font-size:12px;padding:4px 10px;border-radius:4px;font-family:var(--mono);}
+  .tag-green{background:rgba(0,229,160,0.08);color:#00c48a;border:0.5px solid rgba(0,229,160,0.2);}
+  .tag-red{background:rgba(255,79,79,0.08);color:#ff6b6b;border:0.5px solid rgba(255,79,79,0.2);}
+
+  .search-section{border-top:0.5px solid var(--border);padding-top:16px;margin-top:16px;}
+  .search-terms-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .search-chip{display:flex;align-items:center;gap:6px;background:var(--surface2);border:0.5px solid var(--border);border-radius:6px;padding:6px 12px;font-family:var(--mono);font-size:12px;color:var(--text-muted);cursor:pointer;transition:all 0.15s;text-decoration:none;}
+  .search-chip:hover{border-color:var(--accent-dim);color:var(--accent);}
+
+  /* Compare */
+  .compare-result{display:none;}
+  .compare-result.visible{display:block;}
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .compare-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .compare-header{background:var(--surface2);border-bottom:0.5px solid var(--border);padding:10px 14px;}
+  .compare-slot{font-family:var(--mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+  .compare-body{padding:14px;}
+  .compare-spec{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--border);gap:12px;}
+  .compare-spec:last-child{border-bottom:none;}
+  .compare-spec-label{font-size:12px;color:var(--text-muted);flex-shrink:0;}
+  .compare-spec-value{font-size:12px;font-weight:500;color:var(--text);text-align:right;}
+  .compare-verdict{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-top:14px;}
+  .compare-verdict-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:8px;}
+  .compare-verdict-text{font-size:14px;color:var(--text);line-height:1.7;font-weight:300;}
+
+  .error-msg{background:rgba(255,79,79,0.06);border:0.5px solid rgba(255,79,79,0.25);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:#ff6b6b;display:none;font-family:var(--mono);}
+  .error-msg.visible{display:block;}
+  .try-again-row{display:none;margin-top:4px;}
+  .try-again-row.visible{display:flex;gap:10px;}
+  .btn-ghost{background:transparent;border:0.5px solid var(--border-bright);border-radius:var(--radius);color:var(--text-muted);padding:8px 18px;font-family:var(--mono);font-size:12px;cursor:pointer;transition:all 0.15s;}
+  .btn-ghost:hover{color:var(--text);border-color:var(--accent-dim);}
+
+  .footer-note{font-size:11px;color:var(--text-dim);text-align:center;padding-bottom:1.5rem;font-family:var(--mono);}
+
+  @media(max-width:620px){
+    .drop-row.dual{grid-template-columns:1fr;}
+    .compare-grid{grid-template-columns:1fr;}
+    .spec-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <rect x="3" y="9" width="3" height="4" rx="1" fill="#00e5a0"/>
+      <rect x="8" y="7" width="3" height="8" rx="1" fill="#00e5a0" opacity="0.7"/>
+      <rect x="13" y="5" width="3" height="12" rx="1" fill="#00e5a0" opacity="0.45"/>
+      <path d="M6 11H8M11 11H13" stroke="#00e5a0" stroke-width="1.2"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>CONNECTOR SELECTOR</h1>
+    <p>Electrical · AV · Mil-spec · Plumbing · Gas · Hydraulic · Medical · Industrial</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- Domain selector — two rows -->
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="cat-row">
+      <span class="cat-label">Electrical</span>
+      <div class="cat-group">
+        <button class="domain-btn d-any active" data-domain="any" onclick="setDomain(this)"><span class="dot"></span>Any</button>
+        <button class="domain-btn d-av" data-domain="av" onclick="setDomain(this)"><span class="dot"></span>AV/Broadcast</button>
+        <button class="domain-btn d-mil" data-domain="mil" onclick="setDomain(this)"><span class="dot"></span>Mil-spec</button>
+        <button class="domain-btn d-net" data-domain="net" onclick="setDomain(this)"><span class="dot"></span>Networking</button>
+        <button class="domain-btn d-power" data-domain="power" onclick="setDomain(this)"><span class="dot"></span>Power</button>
+        <button class="domain-btn d-auto" data-domain="auto" onclick="setDomain(this)"><span class="dot"></span>Automotive</button>
+      </div>
+    </div>
+    <div class="cat-row">
+      <span class="cat-label">Flow</span>
+      <div class="cat-group">
+        <button class="domain-btn d-plumb" data-domain="plumb" onclick="setDomain(this)"><span class="dot"></span>Plumbing</button>
+        <button class="domain-btn d-hvac" data-domain="hvac" onclick="setDomain(this)"><span class="dot"></span>HVAC/Refrigerant</button>
+        <button class="domain-btn d-gas" data-domain="gas" onclick="setDomain(this)"><span class="dot"></span>Gas line</button>
+        <button class="domain-btn d-hydro" data-domain="hydro" onclick="setDomain(this)"><span class="dot"></span>Hydraulic</button>
+        <button class="domain-btn d-pneum" data-domain="pneum" onclick="setDomain(this)"><span class="dot"></span>Pneumatic</button>
+        <button class="domain-btn d-medgas" data-domain="medgas" onclick="setDomain(this)"><span class="dot"></span>Medical gas</button>
+        <button class="domain-btn d-sanit" data-domain="sanit" onclick="setDomain(this)"><span class="dot"></span>Sanitary</button>
+        <button class="domain-btn d-fire" data-domain="fire" onclick="setDomain(this)"><span class="dot"></span>Fire suppression</button>
+        <button class="domain-btn d-fuel" data-domain="fuel" onclick="setDomain(this)"><span class="dot"></span>Fuel</button>
+        <button class="domain-btn d-cgas" data-domain="cgas" onclick="setDomain(this)"><span class="dot"></span>Compressed gas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <button class="tab-btn active" id="tab-single" onclick="setMode('single')">Single identify</button>
+    <button class="tab-btn" id="tab-compare" onclick="setMode('compare')">Side-by-side compare</button>
+  </div>
+
+  <!-- Drop zones -->
+  <div class="drop-row single" id="dropRow">
+    <div class="drop-zone" id="dropZone1">
+      <input type="file" id="fileInput1" accept="image/*"/>
+      <div class="drop-inner" id="dropInner1">
+        <div class="drop-icon">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M11 3v10M7 9l4-6 4 6" stroke="#7a7a76" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#7a7a76" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <span class="drop-label">Drop fitting or connector photo</span>
+        <span class="drop-sub">or click to browse · JPG PNG HEIC</span>
+      </div>
+      <div class="preview-wrap" id="previewWrap1" style="display:none;">
+        <img id="previewImg1" src="" alt="fitting A"/>
+        <span class="preview-badge" onclick="clearSlot(1)">✕ clear</span>
+      </div>
+    </div>
+    <div class="drop-zone" id="dropZone2" style="display:none;">
+      <input type="file" id="fileInput2" accept="image/*"/>
+      <div class="drop-inner" id="dropInner2">
+        <div class="drop-icon">
+          <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M11 3v10M7 9l4-6 4 6" stroke="#7a7a76" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#7a7a76" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <span class="slot-tag">Fitting B</span>
+        <span class="drop-label">Second fitting photo</span>
+        <span class="drop-sub">or click to browse</span>
+      </div>
+      <div class="preview-wrap" id="previewWrap2" style="display:none;">
+        <img id="previewImg2" src="" alt="fitting B"/>
+        <span class="preview-badge" onclick="clearSlot(2)">✕ clear</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="context-bar">
+    <textarea id="contextInput" placeholder="Describe your use case — e.g. '3/4 copper water supply', '3000 PSI hydraulic return line', 'O2 medical pipeline', 'R-410A HVAC suction line', 'natural gas to furnace'…"></textarea>
+    <button class="btn-analyze" id="analyzeBtn" disabled>IDENTIFY</button>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">waiting for image</span>
+  </div>
+
+  <!-- Single result -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="result-header-left">
+        <span class="connector-name" id="connectorName">—</span>
+        <span class="confidence-pill conf-high" id="confidencePill">HIGH</span>
+        <span class="domain-pill" id="domainPill">—</span>
+      </div>
+      <div class="result-header-actions">
+        <button class="btn-action accent" onclick="exportPDF()">↓ PDF</button>
+        <button class="btn-action accent" onclick="copyShareLink()">⎘ Share</button>
+      </div>
+    </div>
+    <div class="result-body">
+      <!-- Safety banners rendered here -->
+      <div id="safetyBanners"></div>
+
+      <div class="spec-grid" id="specGrid"></div>
+
+      <!-- Material compatibility -->
+      <div id="matCompatSection" style="display:none;margin-bottom:18px;">
+        <div class="section-head">Material compatibility</div>
+        <table class="compat-table" id="matCompatTable">
+          <thead><tr><th>Material</th><th>Compatible</th><th>Notes</th></tr></thead>
+          <tbody id="matCompatBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Flow path -->
+      <div id="flowSection" style="display:none;margin-bottom:18px;">
+        <div class="section-head">Flow path</div>
+        <div class="flow-path" id="flowPath"></div>
+      </div>
+
+      <!-- Compliance -->
+      <div id="complianceSection" style="display:none;margin-bottom:18px;">
+        <div class="section-head">Standards / Compliance</div>
+        <div class="compliance-row" id="complianceRow"></div>
+      </div>
+
+      <div class="verdict-section">
+        <div class="verdict-label">Analysis</div>
+        <div class="verdict-text" id="verdictText"></div>
+        <div class="compat-tags" id="compatTags"></div>
+      </div>
+
+      <div class="search-section" id="searchSection" style="display:none;">
+        <div class="verdict-label">Find this fitting</div>
+        <div class="search-terms-grid" id="searchTermsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare result -->
+  <div class="compare-result" id="compareResult">
+    <div class="compare-grid" id="compareGrid"></div>
+    <div class="compare-verdict" id="compareVerdict" style="display:none;">
+      <div class="compare-verdict-title">Comparison verdict</div>
+      <div class="compare-verdict-text" id="compareVerdictText"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn-action accent" onclick="exportComparePDF()">↓ Export comparison PDF</button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="try-again-row" id="tryAgainRow">
+    <button class="btn-ghost" onclick="resetAll()">← Try another image</button>
+  </div>
+
+</main>
+
+<div class="footer-note">Powered by Claude Vision · For gas, hydraulic, medical gas, and fire suppression applications — always verify with a licensed professional and manufacturer datasheets</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const { jsPDF } = window.jspdf || {};
+let mode = 'single';
+let activeDomain = 'any';
+let slots = { 1:{b64:null,mime:null,result:null}, 2:{b64:null,mime:null,result:null} };
+
+// ─── Domain expert system prompts ──────────────────────────────────────────
+const DOMAIN_PROMPTS = {
+  any: `You are a world-class fitting and connector identification expert across all domains: electrical, AV, networking, plumbing, HVAC, gas, hydraulic, pneumatic, medical gas, sanitary/food-grade, fire suppression, fuel, and compressed gas cylinders.`,
+
+  av: `You are a broadcast and professional AV connector expert. Know: XLR (Neutrik NC3/5/7, combo, etherCON), TRS/TS, RCA, MADI BNC/optical, AES3, SDI (BNC, 3G/12G-SDI), HDMI A/B/C/D/E, DisplayPort, DVI, VGA HD-15, SMPTE 304M fiber, LEMO B/2B/3B, Fischer, Hirose HR10, Powercon TRUE1/20A, Socapex 19-pin, DMX5 XLR, etherCON RJ45.`,
+
+  mil: `You are a military and industrial connector expert. Know: MIL-DTL-38999 (Series I-IV), MIL-DTL-5015, MIL-DTL-26482, Amphenol PT/AT/MS3100-3106, Deutsch DT/DTM/DTP/HD30/HDP20, TE Superseal/Ampseal/HDSCS, Souriau 8STA/UTL, LEMO 0B/1B/2B/3B push-pull, Glenair, ITT Cannon, MIL-STD-810 environmental, IP67/68/69K, mating cycles, vibration/shock specs.`,
+
+  net: `You are a networking connector expert. Know: RJ45 Cat5e/6/6A/7/8, SFP/SFP+/SFP28/QSFP28/QSFP-DD/OSFP, LC/SC/ST/FC/MPO/MTP fiber, M12 A/B/D/X coded, etherCON, USB-A/B/C/micro/mini, Thunderbolt 1-4, PoE 802.3af/at/bt, console RJ45/DB9.`,
+
+  power: `You are a power connector expert. Know: IEC C1-C23, NEMA 5-15/5-20/6-15/6-20/L5/L6/L14/L15/L21, Neutrik powerCON TRUE1/20A/32A, Hubbell/Leviton twist-lock, EV SAE J1772/CCS1/CCS2/CHAdeMO/NACS, solar MC4/Anderson SB/PP/XT60/XT90, JST PH/XH/GH/SH/ZH, Molex Micro-Fit.`,
+
+  auto: `You are an automotive connector expert. Know: OBD-II SAE J1962, Bosch Junior/Senior, Molex MX150, Deutsch DT/DTM/HD30, FAKRA HSD, CAN bus connectors, trailer 7-way SAE J560, MOST/FlexRay/LIN, HV battery orange connectors, camera/ADAS HMTS/USCAR-2.`,
+
+  plumb: `You are a master plumber and pipe fitting identification expert with exhaustive knowledge of:
+THREAD STANDARDS (critical — many look similar but are incompatible):
+- NPT (National Pipe Taper): American tapered, 60° thread angle, seals on threads, requires Teflon/pipe dope
+- NPTF (Dryseal): Like NPT but seals metal-to-metal without sealant
+- BSPP (G thread): British Standard Pipe Parallel, 55° Whitworth thread angle, seals on washer/O-ring, NOT compatible with NPT
+- BSPT (R thread): British Standard Pipe Taper, 55° angle, tapered but NOT compatible with NPT
+- NPT vs BSPT WARNING: They will partially thread together and appear to seal but WILL leak under pressure
+
+FITTING TYPES: compression fittings (ferrule style), push-to-connect/push-fit (SharkBite, Uponor, Viega), sweat/solder fittings, press-fit (ProPress/Viega), crimp rings (PEX), expansion fittings (PEX-A Uponor), flare fittings (45° SAE, 37° JIC), union fittings, dielectric unions (prevent galvanic corrosion between dissimilar metals)
+
+PIPE MATERIALS: copper (Type K/L/M), CPVC, PVC (Sch40/80), PEX (A/B/C), HDPE, galvanized steel, black iron, cast iron, stainless 316L
+
+MATERIAL COMPATIBILITY RULES:
+- Copper + galvanized steel = galvanic corrosion (requires dielectric union)
+- CPVC and PVC are NOT interchangeable (different solvent cement, different temp ratings)
+- PEX-A, PEX-B, PEX-C require different fitting systems
+- Brass fittings in aggressive water = dezincification risk (use DZR brass or bronze)
+
+COMMON FITTINGS: elbows (90°/45°/street), tees, couplings, reducers, unions, caps, plugs, crosses, wyes, cleanouts, P-traps, S-traps, ball valves, gate valves, check valves, PRVs
+
+SIZING: Pipe nominal size ≠ actual OD. A 3/4" NPT fitting has ~1.05" OD. Know IPS, CTS, and tube OD sizing systems.`,
+
+  hvac: `You are an HVAC and refrigerant line expert with knowledge of:
+REFRIGERANT FITTINGS: SAE 45° flare fittings (standard HVAC — 1/4" to 1-3/8" OD), swage fittings, braze fittings (silver solder), Schrader valve cores (access ports)
+ACCESS PORTS: LP (1/4" SAE, blue), HP (3/8" SAE, red), high-side/low-side identification
+REFRIGERANT LINE SETS: suction line (large, insulated), liquid line (small), hot gas line
+QUICK CONNECTS: MinisplitLink, Rectorseal, field-serviceable quick-connect line sets
+FLARE STANDARDS: SAE 45° for HVAC/R, 37° JIC for industrial (incompatible — will appear to thread but will NOT seal)
+REFRIGERANT COMPATIBILITY: R-22 (Schrader 1/4" SAE), R-410A (larger ports, higher pressure), R-32, R-454B (HFO replacements)
+CONDENSATE: PVC drain fittings, secondary drain pans, float switches
+DUCTWORK: snap-lock, spiral, flex duct, TDC/TDF flanges, S&D drives, sheet metal screws, mastic sealant fittings
+CRITICAL: SAE flare and JIC flare look nearly identical but have different seat angles and WILL leak if mixed.`,
+
+  gas: `You are a natural gas and propane fitting expert. SAFETY IS PARAMOUNT. Know:
+THREAD STANDARDS: NPT (standard US gas), BSPT (imported appliances — DO NOT mix with NPT on gas lines)
+FITTING TYPES: black iron pipe fittings (standard gas), CSST flexible gas tubing (TracPipe, CounterStrike, OmegaFlex), corrugated stainless steel fittings, brass gas fittings, dielectric fittings
+SHUTOFFS: ball valves (quarter-turn), gas cocks (key-type), automatic excess-flow valves, earthquake shutoffs
+CONNECTORS: flexible appliance connectors (stainless corrugated, max 6 feet, never concealed), quick-disconnect (Dormont), union fittings
+REGULATORS: two-stage propane regulation, single-stage, adjustable, line pressure vs. appliance pressure
+SIZING: pressure drop calculations matter — undersized line = appliance starvation
+CRITICAL SAFETY RULES:
+- NEVER use Teflon tape on gas flare fittings — flare fittings seal metal-to-metal
+- NEVER use Teflon tape on gas connections without pipe dope rated for gas
+- Flexible connectors CANNOT be concealed in walls or run through floors/ceilings
+- CSST requires bonding/grounding per NFPA 54 to prevent lightning damage
+- Any NPT/BSPT confusion on a gas line is a potential explosion risk — flag clearly`,
+
+  hydro: `You are a hydraulic fitting and hose expert with exhaustive knowledge of:
+THREAD STANDARDS (critical for high-pressure sealing):
+- JIC 37° flare (SAE J514): most common US hydraulic, 37° seat angle, silver/zinc finish
+- ORFS (O-Ring Face Seal, SAE J1453): best seal, flat face with O-ring groove, preferred for high pressure
+- BSPP (British Standard Pipe Parallel): parallel thread, seals on bonded seal or O-ring, common on European equipment
+- BSPT (British Standard Pipe Taper): tapered, seals on thread, common on some Asian/European equipment
+- SAE O-Ring Boss (ORB, SAE J1926): straight thread, seals on O-ring into boss, common on ports
+- NPTF (Dryseal): tapered, seals metal-to-metal, less preferred for hydraulics
+- Metric threads: M14x1.5, M16x1.5, M18x1.5, M22x1.5, M26x1.5 (DIN 3852)
+- CRITICAL: JIC and 45° SAE flare look similar but are different angles — will appear to seat but WILL leak under pressure
+
+PRESSURE RATINGS: Schedule matters. Same fitting style, different pressure ratings (2000/3000/5000/6000 PSI series)
+HOSE: SAE 100R1-R17 hose standards, spiral vs. braid construction, end crimp fittings
+QUICK DISCONNECTS: ISO A/B/C/D/E/F tips, flat-face (FFQC) for low-spill, poppet vs. ball valve internals
+BRANDS: Parker, Eaton, Swagelok, Sun Hydraulics, Bosch Rexroth, Danfoss`,
+
+  pneum: `You are a pneumatic fitting and air system expert. Know:
+PUSH-TO-CONNECT: Parker Prestolok, Festo, SMC, Norgren, John Guest, Speedfit — 4/6/8/10/12mm OD tube or 1/4"/3/8"/1/2" tube
+THREAD: NPT (US), BSPP (European/ISO), metric, G-thread
+QUICK DISCONNECTS: Industrial interchange (ARO 210), European (ISO B), US industrial, automotive (Schrader), Milton, Foster
+SCHRADER VS PRESTA: bicycle/tire valves — Schrader (wide, car-style), Presta (narrow, road bike)
+FITTINGS: elbows, tees, reducers, unions, bulkhead, Y-fittings, push-in, compression
+VALVES: solenoid valves, pilot-operated, manual override, 3/2-way, 5/2-way, 5/3-way
+FRL: Filter-Regulator-Lubricator combinations and their port sizes
+TUBING: polyurethane (PU), polyethylene (PE), nylon PA11/PA12, PTFE — incompatible solvents/chemicals
+SIZING: flow coefficient Cv, pressure drop, bore size`,
+
+  medgas: `You are a medical gas system expert. SAFETY IS CRITICAL — wrong connections can be fatal. Know:
+DISS (Diameter Index Safety System, CGA V-5): threaded connections, each gas has unique thread diameter pair to prevent cross-connection
+- O2: DISS 1240 (CGA 870 for small cylinders)
+- N2O: DISS 1040
+- Medical Air: DISS 1160
+- CO2: DISS 1060
+- N2 (Nitrogen): DISS 1060 (instrument air port) — VERIFY
+- Vacuum: DISS 1220
+- AGSS (anesthetic gas scavenging): DISS 2400
+
+NFPA 99 COMPLIANCE: color coding (green=O2, blue=N2O, yellow=medical air, grey=CO2, black=N2, white=vacuum)
+QUICK CONNECTS: Puritan Bennett, Chemetron, Ohio/NCG, Ohmeda — all proprietary, all gas-specific, NOT interchangeable between gas types
+PIPELINE: copper Type K or L, brazed joints, no thread sealants in O2 lines, no oil/grease contact with O2
+
+CRITICAL SAFETY:
+- O2 lines: ABSOLUTELY NO hydrocarbon lubricants, oils, or greases — fire/explosion hazard
+- N2O and N2 fittings can look similar — always verify gas type before connecting
+- Medical gas connections are intentionally non-interchangeable by design — if it threads on, confirm the gas type
+- Any suspected cross-connection: evacuate and call facility engineering immediately`,
+
+  sanit: `You are a sanitary and food-grade fitting expert. Know:
+TRI-CLAMP (TC/SMS): sizes 1.5"/2"/2.5"/3"/4" OD, 304 vs 316L stainless, Ra surface finish (32 Ra or better for dairy), PTFE/EPDM/silicone gaskets
+DIN 11851: European dairy/food standard, threaded with slotted nut, sizes DN25-DN100
+SMS: Swedish Milk Standard, similar to DIN 11851
+IDF/ISO: International Dairy Federation fittings
+RJT: British standard, round profile thread
+MATERIAL: 304 SS (standard food grade), 316L SS (corrosion/CIP resistance, pharmaceutical), electropolished for pharma, passivated
+GASKET MATERIALS: EPDM (general food), PTFE/white PTFE (high-temp/aggressive CIP), silicone (FDA compliant), Buna-N/NBR (oil — NOT food grade typically)
+SURFACE FINISH: 32 Ra for dairy/food, 15 Ra for pharmaceutical (USP Class VI)
+3-A CERTIFIED vs NON-3-A: 3-A Sanitary Standards Inc certification means hygienic design verified
+CIP/SIP: clean-in-place and steam-in-place compatibility — not all gaskets survive both
+HYGIENIC CLAMPS: hex bolts (standard), wing nuts (quick-release), safety clamps (prevent blowout)`,
+
+  fire: `You are a fire suppression and sprinkler system fitting expert. Know:
+SPRINKLER HEADS: standard response/quick response, upright/pendent/sidewall/concealed, K-factor, temperature rating (orange=57°C, red=68°C, yellow=79°C, green=93°C, blue=141°C, purple=182°C), thread 1/2" NPT standard
+PIPE JOINING: cut grooved (Victaulic/Grinnell/Anvil), roll grooved, threaded NPT, welded, press (CPVC for residential)
+GROOVE COUPLINGS: rigid (Style 07/009), flexible (Style 75/77), reducing, reducing tees — rigid vs flexible matters for seismic/thermal movement
+FIRE HOSE: NST (National Standard Thread, aka NH), NHFST (1.5" female), 2.5" male NST standard, Storz (sexless coupling, quarter-turn)
+SIAMESE/FDC: Fire Department Connection, 2.5" NST or Storz, clapper check valves inside
+STANDPIPE: Class I (2.5" hose valve), Class II (1.5"), Class III (both)
+DELUGE/PRE-ACTION: deluge valves, trim assemblies, pilot lines
+NFPA 13 COMPLIANCE: listing requirements — only listed fittings in listed systems
+CPVC: only for light hazard residential (FlowGuard Gold, Blazemaster), NOT compatible with standard PVC cement, special cement required`,
+
+  fuel: `You are a fuel system fitting expert. Know:
+SAE QUICK-CONNECT FUEL LINE: SAE J2044, snap-together push-connect, sizes 5/16"/3/8"/1/2" OD, color-coded (black=fuel supply, blue=return, green=EVAP)
+AN/JIC FITTINGS: AN (Army-Navy) = JIC 37° flare, dash sizes (-2 through -20 = 1/16" increments OD), aluminum (blue anodized) or stainless, straight/90°/45° fittings
+MARINE: ABYC H-24 compliant fittings, 316SS or tinned copper, Coast Guard approved hose
+NPT: used on fuel, requires fuel-compatible sealant (NOT standard Teflon tape — use yellow PTFE or anaerobic sealant)
+CHECK VALVES: anti-siphon, ball check, inline check — flow direction critical
+BANJO FITTINGS: hollow bolt with cross-drilling, common on carbs/fuel rails, sizes M10/M12/M14/M16
+FUEL RAIL: EFI injector O-ring fittings, Shrader valve test ports, fuel pressure regulator fittings
+COMPATIBILITY: ethanol-resistant materials required for E85/flex fuel (some nitrile rubber incompatible above E15)
+HOSE RATINGS: SAE J30 R7/R9 (fuel injection hose), SAE J1527 (marine), USCG Type A/B/C`,
+
+  cgas: `You are a compressed gas cylinder valve and fitting expert. SAFETY CRITICAL — wrong connections cause explosions, fires, and asphyxiation. Know:
+CGA (Compressed Gas Association) FITTINGS — intentionally non-interchangeable by gas type:
+- CGA-540: Oxygen (O2) — right-hand thread, nipple
+- CGA-510: Propane (LP gas) — left-hand thread (LHT), prevents O2 regulator on propane
+- CGA-520: Butane — right-hand thread
+- CGA-580: Nitrogen (N2), Argon (Ar), Helium (He) — right-hand thread
+- CGA-590: Compressed air — right-hand thread
+- CGA-320: Carbon dioxide (CO2) — right-hand thread
+- CGA-300: Acetylene (C2H2) — left-hand thread (LHT), B-size nut
+- CGA-200: Acetylene (medium pressure) — LHT
+- CGA-695: Hydrogen (H2) — right-hand thread
+- CGA-705: Hydrogen high pressure — right-hand thread
+- CGA-660: Nitrous oxide (N2O) — right-hand thread
+- CGA-677: Medical CO2 — right-hand thread (different from industrial CGA-320)
+- CGA-870: Medical O2 pin-index (small cylinders, DISS system)
+LEFT-HAND THREAD RULE: flammable/combustible gases typically have left-hand threads (acetylene, propane, hydrogen) to prevent cross-connection with oxidizers
+COLOR CODING (US standard): O2=green, H2=red, N2=black, Ar=gray, CO2=gray/black, He=brown, propane=silver/gray, acetylene=maroon
+CRITICAL: CGA-580 (N2/Ar/He) and CGA-590 (air) regulators will fit each other's tanks. Always verify gas type on label before connecting. Never use O2 equipment on combustible gas or vice versa.`
+};
+
+const FLOW_DOMAINS = ['plumb','hvac','gas','hydro','pneum','medgas','sanit','fire','fuel','cgas'];
+
+function isFlowDomain(d) { return FLOW_DOMAINS.includes(d); }
+
+function buildSystemPrompt(domain) {
+  return (DOMAIN_PROMPTS[domain] || DOMAIN_PROMPTS.any) + `\n\nRespond ONLY with valid JSON — no markdown, no code fences, no preamble.`;
+}
+
+function buildUserPrompt(domain, context, isCompare) {
+  const ctx = context ? `\nUser context: "${context}"` : '';
+  const isFlow = isFlowDomain(domain);
+
+  const specSchema = isFlow
+    ? `[{"label":"Type","value":"..."},{"label":"Standard/Spec","value":"..."},{"label":"Size","value":"..."},{"label":"Material","value":"..."},{"label":"Max pressure","value":"..."},{"label":"Max temp","value":"..."},{"label":"Connection method","value":"..."},{"label":"Thread/end type","value":"..."}]`
+    : `[{"label":"Standard","value":"..."},{"label":"Max Speed","value":"..."},{"label":"Max Distance","value":"..."},{"label":"Pins/Contacts","value":"..."},{"label":"Form Factor","value":"..."},{"label":"Common Use","value":"..."}]`;
+
+  const single = `{
+  "name": "Full official fitting/connector name",
+  "domain": "plumbing|hvac|gas|hydraulic|pneumatic|medical-gas|sanitary|fire-suppression|fuel|compressed-gas|av|mil-spec|networking|power|automotive|general",
+  "confidence": "high|medium|low",
+  "specs": ${specSchema},
+  "safety_alerts": [
+    {
+      "level": "critical|warning|info",
+      "title": "Short title",
+      "body": "Detailed safety note. Include specific standards, incompatibility warnings, or required procedures."
+    }
+  ],
+  "material_compat": [
+    {"material":"Copper","compatible":"yes|no|conditional","note":"Brief reason"},
+    {"material":"Galvanized steel","compatible":"yes|no|conditional","note":"Requires dielectric union"},
+    {"material":"CPVC","compatible":"yes|no|conditional","note":"..."}
+  ],
+  "flow_path": ["Upstream component","→","This fitting","→","Downstream component"],
+  "compliance": [
+    {"standard":"ASME B16.18","met":true},
+    {"standard":"NSF 61","met":true}
+  ],
+  "analysis": "2-4 sentence expert plain-English description with domain-specific context including pressure ratings, sealing method, and any critical identification features.",
+  "good_for": ["use case 1","use case 2","use case 3"],
+  "not_for": ["use case 1","never use for gas lines"],
+  "verdict": "One direct sentence on fit for user's stated use case. Empty string if no context given.",
+  "search_terms": ["exact product search term 1","brand model number","term 3"]
+}
+
+Rules:
+- safety_alerts: ALWAYS populate for gas, hydraulic, medical gas, compressed gas, and fire suppression domains. For plumbing, flag galvanic incompatibilities, thread standard confusion risks, and material mismatches. Empty array only for genuinely low-risk electrical/AV connectors.
+- material_compat: include for all flow domains (3-5 relevant materials). Empty array for electrical.
+- flow_path: 3-5 nodes. Empty array if not applicable.
+- compliance: list 2-4 relevant standards for the domain.
+- If you cannot confidently identify the fitting, set confidence to "low", name to "Unidentified fitting", and explain what you CAN see in the analysis.`;
+
+  if (isCompare) {
+    return `Identify BOTH fittings — Fitting A (first image) and Fitting B (second image).${ctx}
+Use this JSON schema for each. Return this wrapper:
+{
+  "connectorA": { /* single schema */ },
+  "connectorB": { /* single schema */ },
+  "comparison_verdict": "4-6 sentences: key differences, pressure/size/material compatibility, whether they can mate directly, what adapter or transition fitting is needed if not, and which is better suited for the stated use case."
+}
+
+Single schema:\n${single}`;
+  }
+  return `Identify this fitting or connector.${ctx}\nReturn this exact JSON:\n${single}`;
+}
+
+// ─── Domain / mode state ───────────────────────────────────────────────────
+function setDomain(btn) {
+  document.querySelectorAll('.domain-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeDomain = btn.dataset.domain;
+  const placeholder = isFlowDomain(activeDomain)
+    ? 'Describe your use case — e.g. "3/4 copper water supply", "3000 PSI hydraulic return", "O2 medical pipeline", "R-410A suction line"…'
+    : 'Describe your use case — e.g. "SDI camera to monitor", "MIL-STD-461 rig", "10GbE server build"…';
+  document.getElementById('contextInput').placeholder = placeholder;
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-single').classList.toggle('active', m==='single');
+  document.getElementById('tab-compare').classList.toggle('active', m==='compare');
+  const row = document.getElementById('dropRow');
+  const dz2 = document.getElementById('dropZone2');
+  if (m==='compare') {
+    row.className='drop-row dual'; dz2.style.display='';
+    document.getElementById('analyzeBtn').textContent='COMPARE';
+    const di1=document.getElementById('dropInner1');
+    if(!di1.querySelector('.slot-tag')){const t=document.createElement('span');t.className='slot-tag';t.textContent='Fitting A';di1.insertBefore(t,di1.firstChild);}
+  } else {
+    row.className='drop-row single'; dz2.style.display='none';
+    document.getElementById('analyzeBtn').textContent='IDENTIFY';
+  }
+  resetResults(); checkReady();
+}
+
+// ─── File handling ─────────────────────────────────────────────────────────
+function setupSlot(n) {
+  const fi=document.getElementById('fileInput'+n);
+  const dz=document.getElementById('dropZone'+n);
+  fi.addEventListener('change',e=>handleFile(n,e.target.files[0]));
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');handleFile(n,e.dataTransfer.files[0]);});
+}
+setupSlot(1); setupSlot(2);
+
+function handleFile(n, file) {
+  if(!file||!file.type.startsWith('image/'))return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const dataUrl=e.target.result;
+    slots[n].mime=file.type; slots[n].b64=dataUrl.split(',')[1]; slots[n].result=null;
+    document.getElementById('previewImg'+n).src=dataUrl;
+    document.getElementById('dropInner'+n).style.display='none';
+    document.getElementById('previewWrap'+n).style.display='block';
+    resetResults(); checkReady(); setStatus('image loaded · ready to identify');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearSlot(n) {
+  slots[n]={b64:null,mime:null,result:null};
+  document.getElementById('previewWrap'+n).style.display='none';
+  document.getElementById('dropInner'+n).style.display='flex';
+  document.getElementById('fileInput'+n).value='';
+  resetResults(); checkReady();
+}
+
+function checkReady() {
+  const ready=mode==='single'?!!slots[1].b64:(!!slots[1].b64&&!!slots[2].b64);
+  document.getElementById('analyzeBtn').disabled=!ready;
+  if(!slots[1].b64&&!slots[2].b64)setStatus('waiting for image');
+}
+
+function setStatus(msg, active=false) {
+  document.getElementById('statusText').textContent=msg;
+  document.getElementById('statusDot').className='status-dot'+(active?' active':'');
+}
+
+function resetResults() {
+  document.getElementById('resultCard').classList.remove('visible');
+  document.getElementById('compareResult').classList.remove('visible');
+  document.getElementById('errorMsg').classList.remove('visible');
+  document.getElementById('tryAgainRow').classList.remove('visible');
+}
+
+function resetAll() {
+  clearSlot(1); clearSlot(2);
+  document.getElementById('contextInput').value='';
+  resetResults(); setStatus('waiting for image');
+}
+
+document.getElementById('analyzeBtn').addEventListener('click',()=>{
+  mode==='compare'?runCompare():runSingle();
+});
+
+// ─── API ───────────────────────────────────────────────────────────────────
+async function callClaude(messages, domain) {
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2500,system:buildSystemPrompt(domain),messages})
+  });
+  if(!resp.ok) throw new Error('API error '+resp.status);
+  const data=await resp.json();
+  const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  return JSON.parse(raw.replace(/```json|```/g,'').trim());
+}
+
+async function runSingle() {
+  const btn=document.getElementById('analyzeBtn');
+  btn.disabled=true; btn.textContent='ANALYZING…';
+  setStatus('sending to Claude…',true); resetResults();
+  const ctx=document.getElementById('contextInput').value.trim();
+  try {
+    const r=await callClaude([{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:slots[1].mime,data:slots[1].b64}},
+      {type:'text',text:buildUserPrompt(activeDomain,ctx,false)}
+    ]}], activeDomain);
+    slots[1].result=r; renderSingle(r);
+  } catch(e){showError(e.message);}
+  finally{btn.disabled=false;btn.textContent='IDENTIFY';}
+}
+
+async function runCompare() {
+  const btn=document.getElementById('analyzeBtn');
+  btn.disabled=true; btn.textContent='ANALYZING…';
+  setStatus('sending both images…',true); resetResults();
+  const ctx=document.getElementById('contextInput').value.trim();
+  try {
+    const r=await callClaude([{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:slots[1].mime,data:slots[1].b64}},
+      {type:'image',source:{type:'base64',media_type:slots[2].mime,data:slots[2].b64}},
+      {type:'text',text:buildUserPrompt(activeDomain,ctx,true)}
+    ]}], activeDomain);
+    slots[1].result=r.connectorA; slots[2].result=r.connectorB;
+    renderCompare(r);
+  } catch(e){showError(e.message);}
+  finally{btn.disabled=false;btn.textContent='COMPARE';}
+}
+
+// ─── Render ────────────────────────────────────────────────────────────────
+function renderSingle(r) {
+  setStatus('identification complete');
+  document.getElementById('connectorName').textContent=r.name||'Unknown';
+
+  const pill=document.getElementById('confidencePill');
+  pill.textContent=(r.confidence||'low').toUpperCase();
+  pill.className='confidence-pill conf-'+(r.confidence==='high'?'high':r.confidence==='medium'?'med':'low');
+
+  document.getElementById('domainPill').textContent=(r.domain||'general').toUpperCase().replace(/-/g,' ');
+
+  // Safety banners — rendered in order: critical first
+  const sb=document.getElementById('safetyBanners');
+  sb.innerHTML='';
+  const alerts=(r.safety_alerts||[]).slice().sort((a,b)=>{
+    const ord={critical:0,warning:1,info:2};
+    return (ord[a.level]||2)-(ord[b.level]||2);
+  });
+  alerts.forEach(a=>{
+    const icon={critical:'!! CRITICAL',warning:'! WARNING',info:'ℹ INFO'}[a.level]||'ℹ';
+    sb.innerHTML+=`<div class="safety-banner ${a.level||'info'}">
+      <span class="safety-icon">${icon}</span>
+      <div class="safety-content">
+        <div class="safety-title">${a.title||''}</div>
+        <div class="safety-text">${a.body||''}</div>
+      </div>
+    </div>`;
+  });
+
+  // Specs — highlight first 2
+  const grid=document.getElementById('specGrid');
+  grid.innerHTML=(r.specs||[]).map((s,i)=>`<div class="spec-cell${i<2?' highlight':''}">
+    <div class="spec-label">${s.label}</div><div class="spec-value">${s.value}</div></div>`).join('');
+
+  // Material compatibility table
+  const mc=document.getElementById('matCompatSection');
+  const mcb=document.getElementById('matCompatBody');
+  if(r.material_compat&&r.material_compat.length){
+    mcb.innerHTML=r.material_compat.map(m=>{
+      const cls=m.compatible==='yes'?'compat-ok':m.compatible==='no'?'compat-no':'compat-warn';
+      const sym=m.compatible==='yes'?'✓':m.compatible==='no'?'✗':'~';
+      return `<tr><td>${m.material}</td><td class="${cls}">${sym} ${m.compatible}</td><td style="color:var(--text-muted)">${m.note||''}</td></tr>`;
+    }).join('');
+    mc.style.display='';
+  } else {mc.style.display='none';}
+
+  // Flow path
+  const fs=document.getElementById('flowSection');
+  const fp=document.getElementById('flowPath');
+  if(r.flow_path&&r.flow_path.length>1){
+    fp.innerHTML=r.flow_path.map((n,i)=>{
+      const isArrow=n==='→'||n==='->'||n==='-->';
+      return isArrow?`<span class="flow-arrow">→</span>`:`<span class="flow-node${i===2?' mid':''}">${n}</span>`;
+    }).join('');
+    fs.style.display='';
+  } else {fs.style.display='none';}
+
+  // Compliance
+  const cs=document.getElementById('complianceSection');
+  const cr=document.getElementById('complianceRow');
+  if(r.compliance&&r.compliance.length){
+    cr.innerHTML=r.compliance.map(c=>`<span class="cbadge${c.met?' met':' warn'}">${c.standard}</span>`).join('');
+    cs.style.display='';
+  } else {cs.style.display='none';}
+
+  let html=r.analysis||'';
+  if(r.verdict&&r.verdict.length>2) html+=`<br><br><strong>Use case verdict:</strong> ${r.verdict}`;
+  document.getElementById('verdictText').innerHTML=html;
+
+  const tags=document.getElementById('compatTags');
+  tags.innerHTML=(r.good_for||[]).map(t=>`<span class="tag tag-green">✓ ${t}</span>`).join('')+
+    (r.not_for||[]).map(t=>`<span class="tag tag-red">✗ ${t}</span>`).join('');
+
+  const ss=document.getElementById('searchSection');
+  const stg=document.getElementById('searchTermsGrid');
+  if(r.search_terms&&r.search_terms.length){
+    stg.innerHTML=r.search_terms.map(t=>`<a class="search-chip" href="https://www.amazon.com/s?k=${encodeURIComponent(t)}" target="_blank">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>${t}</a>`).join('');
+    ss.style.display='';
+  } else {ss.style.display='none';}
+
+  document.getElementById('resultCard').classList.add('visible');
+  document.getElementById('tryAgainRow').classList.add('visible');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderCompare(r) {
+  setStatus('comparison complete');
+  const grid=document.getElementById('compareGrid');
+  grid.innerHTML='';
+  [['A',r.connectorA],['B',r.connectorB]].forEach(([label,c])=>{
+    if(!c)return;
+    const card=document.createElement('div');
+    card.className='compare-card';
+    const conf=c.confidence==='high'?'conf-high':c.confidence==='medium'?'conf-med':'conf-low';
+    const alerts=(c.safety_alerts||[]).map(a=>`<div class="safety-banner ${a.level||'info'}" style="margin-bottom:8px;">
+      <span class="safety-icon" style="font-size:10px;">${{critical:'!!',warning:'!',info:'ℹ'}[a.level]||'ℹ'}</span>
+      <div class="safety-content"><div class="safety-title" style="font-size:10px;">${a.title}</div><div class="safety-text" style="font-size:11px;">${a.body}</div></div>
+    </div>`).join('');
+    const searchLinks=(c.search_terms||[]).slice(0,2).map(t=>`<a class="search-chip" href="https://www.amazon.com/s?k=${encodeURIComponent(t)}" target="_blank" style="font-size:11px;padding:3px 8px;">${t}</a>`).join('');
+    card.innerHTML=`
+      <div class="compare-header">
+        <div class="compare-slot">Fitting ${label}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <span class="connector-name" style="font-size:13px;">${c.name||'Unknown'}</span>
+          <span class="confidence-pill ${conf}" style="font-size:9px;">${(c.confidence||'low').toUpperCase()}</span>
+        </div>
+        ${c.domain?`<div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-top:4px;">${c.domain.toUpperCase()}</div>`:''}
+      </div>
+      <div class="compare-body">
+        ${alerts}
+        ${(c.specs||[]).map(s=>`<div class="compare-spec"><span class="compare-spec-label">${s.label}</span><span class="compare-spec-value">${s.value}</span></div>`).join('')}
+        ${c.analysis?`<p style="font-size:13px;color:var(--text-muted);margin-top:12px;line-height:1.6;font-weight:300;">${c.analysis}</p>`:''}
+        ${searchLinks?`<div class="search-terms-grid" style="margin-top:12px;">${searchLinks}</div>`:''}
+        <div class="compat-tags" style="margin-top:10px;">
+          ${(c.good_for||[]).map(t=>`<span class="tag tag-green">✓ ${t}</span>`).join('')}
+          ${(c.not_for||[]).map(t=>`<span class="tag tag-red">✗ ${t}</span>`).join('')}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  if(r.comparison_verdict){
+    document.getElementById('compareVerdictText').textContent=r.comparison_verdict;
+    document.getElementById('compareVerdict').style.display='';
+  }
+  document.getElementById('compareResult').classList.add('visible');
+  document.getElementById('tryAgainRow').classList.add('visible');
+  document.getElementById('compareResult').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function showError(msg) {
+  setStatus('error');
+  const el=document.getElementById('errorMsg');
+  el.textContent='Error: '+msg;
+  el.classList.add('visible');
+  document.getElementById('tryAgainRow').classList.add('visible');
+}
+
+// Share link
+function copyShareLink() {
+  const r=slots[1].result; if(!r)return;
+  try {
+    const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(r))));
+    const url=window.location.href.split('#')[0]+'#r='+encoded;
+    navigator.clipboard.writeText(url).then(()=>{
+      const btn=document.querySelector('[onclick="copyShareLink()"]');
+      const orig=btn.textContent; btn.textContent='✓ Copied';
+      setTimeout(()=>btn.textContent=orig,2000);
+    });
+  } catch(e){}
+}
+
+window.addEventListener('load',()=>{
+  const hash=window.location.hash;
+  if(hash.startsWith('#r=')){
+    try{const r=JSON.parse(decodeURIComponent(escape(atob(hash.slice(3)))));slots[1].result=r;renderSingle(r);setStatus('restored from shared link');}catch(e){}
+  }
+});
+
+// ─── PDF export ────────────────────────────────────────────────────────────
+function exportPDF() {
+  const r=slots[1].result; if(!r||!jsPDF)return;
+  const doc=new jsPDF({unit:'pt',format:'letter'});
+  const margin=48, w=doc.internal.pageSize.getWidth()-margin*2;
+  let y=56;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0,180,120);
+  doc.text('CONNECTOR SELECTOR',margin,y);y+=18;
+  doc.setFontSize(16);doc.setTextColor(20,20,20);doc.text(r.name||'Unknown',margin,y);y+=12;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(120,120,120);
+  doc.text(`Domain: ${(r.domain||'general').toUpperCase()}  ·  Confidence: ${(r.confidence||'—').toUpperCase()}`,margin,y);y+=22;
+  doc.setDrawColor(220,220,220);doc.line(margin,y,margin+w,y);y+=14;
+
+  // Safety alerts
+  (r.safety_alerts||[]).forEach(a=>{
+    const col=a.level==='critical'?[200,30,30]:a.level==='warning'?[180,120,0]:[30,100,200];
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...col);
+    doc.text((a.level||'').toUpperCase()+': '+( a.title||''),margin,y);y+=12;
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(60,60,60);
+    const lines=doc.splitTextToSize(a.body||'',w);doc.text(lines,margin+6,y);y+=lines.length*11+8;
+  });
+  if((r.safety_alerts||[]).length){doc.line(margin,y,margin+w,y);y+=12;}
+
+  // Specs
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Specifications',margin,y);y+=13;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  (r.specs||[]).forEach(s=>{doc.setTextColor(110,110,110);doc.text(s.label+':',margin,y);doc.setTextColor(30,30,30);doc.text(s.value||'—',margin+130,y);y+=13;});
+  y+=6;
+
+  // Material compat
+  if((r.material_compat||[]).length){
+    doc.setDrawColor(220,220,220);doc.line(margin,y,margin+w,y);y+=12;
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Material compatibility',margin,y);y+=13;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    r.material_compat.forEach(m=>{
+      const col=m.compatible==='yes'?[0,150,100]:m.compatible==='no'?[180,30,30]:[160,100,0];
+      doc.setTextColor(...col);doc.text((m.compatible==='yes'?'✓':m.compatible==='no'?'✗':'~')+' '+m.material,margin+6,y);
+      doc.setTextColor(100,100,100);if(m.note)doc.text(m.note,margin+120,y);y+=13;
+    });y+=4;
+  }
+
+  // Compliance
+  if((r.compliance||[]).length){
+    doc.setDrawColor(220,220,220);doc.line(margin,y,margin+w,y);y+=12;
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Standards',margin,y);y+=13;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    r.compliance.forEach(c=>{
+      const col=c.met?[0,150,80]:[160,80,0];
+      doc.setTextColor(...col);doc.text((c.met?'✓ ':'✗ ')+c.standard,margin+6,y);y+=13;
+    });y+=4;
+  }
+
+  doc.setDrawColor(220,220,220);doc.line(margin,y,margin+w,y);y+=12;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Analysis',margin,y);y+=13;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+  const al=doc.splitTextToSize(r.analysis||'',w);doc.text(al,margin,y);y+=al.length*12+8;
+  if(r.verdict&&r.verdict.length>2){
+    doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);doc.text('Use case verdict:',margin,y);y+=12;
+    doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
+    const vl=doc.splitTextToSize(r.verdict,w);doc.text(vl,margin,y);y+=vl.length*12+8;
+  }
+  if((r.search_terms||[]).length){
+    doc.setDrawColor(220,220,220);doc.line(margin,y,margin+w,y);y+=12;
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Find this fitting',margin,y);y+=13;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+    r.search_terms.forEach(t=>{doc.text('• '+t,margin+6,y);y+=13;});
+  }
+  y+=16;doc.setFontSize(7);doc.setTextColor(180,180,180);
+  doc.text('Generated by Connector Selector · For gas, hydraulic, medical gas, and fire suppression — verify with a licensed professional and manufacturer datasheets',margin,y);
+  doc.save('fitting-'+(r.name||'unknown').replace(/\s+/g,'-').toLowerCase()+'.pdf');
+}
+
+function exportComparePDF() {
+  const a=slots[1].result,b=slots[2].result;
+  if(!a||!b||!jsPDF)return;
+  const doc=new jsPDF({unit:'pt',format:'letter'});
+  const margin=48,w=doc.internal.pageSize.getWidth()-margin*2;
+  let y=56;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0,180,120);
+  doc.text('CONNECTOR SELECTOR — COMPARISON',margin,y);y+=28;
+  doc.setDrawColor(220,220,220);
+  [['Fitting A',a],['Fitting B',b]].forEach(([label,r])=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(150,150,150);doc.text(label.toUpperCase(),margin,y);y+=12;
+    doc.setFontSize(13);doc.setTextColor(20,20,20);doc.text(r.name||'Unknown',margin,y);y+=14;
+    (r.safety_alerts||[]).slice(0,2).forEach(a=>{
+      const col=a.level==='critical'?[200,30,30]:[160,100,0];
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...col);
+      doc.text((a.level||'').toUpperCase()+': '+a.title,margin+4,y);y+=11;
+    });
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    (r.specs||[]).forEach(s=>{doc.setTextColor(110,110,110);doc.text(s.label+':',margin+6,y);doc.setTextColor(30,30,30);doc.text(s.value||'—',margin+130,y);y+=13;});
+    if(r.analysis){y+=4;doc.setTextColor(60,60,60);const lines=doc.splitTextToSize(r.analysis,w);doc.text(lines,margin,y);y+=lines.length*12;}
+    y+=14;doc.line(margin,y,margin+w,y);y+=14;
+  });
+  const cv=document.getElementById('compareVerdictText').textContent;
+  if(cv){
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);doc.text('Comparison verdict',margin,y);y+=13;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+    const vl=doc.splitTextToSize(cv,w);doc.text(vl,margin,y);y+=vl.length*12+16;
+  }
+  doc.setFontSize(7);doc.setTextColor(180,180,180);
+  doc.text('Generated by Connector Selector · Always verify with a licensed professional for safety-critical applications',margin,y);
+  doc.save('fitting-comparison.pdf');
+}
+</script>
+</body>
+</html>
