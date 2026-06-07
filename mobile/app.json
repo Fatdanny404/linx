@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Linx",
+    "slug": "linx",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.linx.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Linx uses the camera to photograph connectors and fittings for identification.",
+        "NSPhotoLibraryUsageDescription": "Linx accesses your photo library to analyze connector images."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "package": "com.linx.app",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      ["expo-image-picker", { "photosPermission": "Linx needs access to your photos to analyze connector images." }]
+    ],
+    "scheme": "linx",
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
